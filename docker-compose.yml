@@ -1,0 +1,73 @@
+# For more information: https://laravel.com/docs/sail
+# If you change the main service name, add the same name to the env file at the APP_SERVICE variable
+# Read more: https://stackoverflow.com/questions/67514427/laravel-sail-command-have-no-response-except-sail-up-and-sail-down#answer-68204100
+version: "3"
+services:
+  ehoreca:
+    build:
+      context: ./vendor/laravel/sail/runtimes/8.0
+      dockerfile: Dockerfile
+      args:
+        WWWGROUP: "${WWWGROUP}"
+    image: sail-8.0/app
+    restart: unless-stopped
+    container_name: ehoreca
+    ports:
+      - "${APP_PORT:-80}:80"
+    environment:
+      WWWUSER: "${WWWUSER}"
+      LARAVEL_SAIL: 1
+      UPLOAD_LIMIT: 64M
+      TZ: "Europe/Athens"
+    volumes:
+      - ".:/var/www/html"
+    networks:
+      - ehoreca_network
+    depends_on:
+      - ehoreca_database
+    links:
+      - ehoreca_database
+
+  ehoreca_database:
+    image: mysql:8.0
+    restart: unless-stopped
+    ports:
+      - "${DB_HOST_PORT:-3306}:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+      - MYSQL_DATABASE=${DB_DATABASE}
+      - MYSQL_USER=${DB_USERNAME}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+      - TZ=Europe/Athens
+    container_name: ehoreca_database
+    volumes:
+      - "ehoreca_db:/var/lib/mysql"
+    networks:
+      - ehoreca_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-p${DB_PASSWORD}"]
+      retries: 3
+      timeout: 5s
+
+  phpmyadmin:
+    container_name: ehoreca_phpmyadmin
+    image: phpmyadmin/phpmyadmin
+    restart: unless-stopped
+    links:
+      - ehoreca_database
+    ports:
+      - "${PHPMYADMIN_PORT:-80}:80"
+    networks:
+      - ehoreca_network
+    environment:
+      MYSQL_USERNAME: "${DB_USERNAME}"
+      MYSQL_ROOT_PASSWORD: "${DB_PASSWORD}"
+      PMA_HOST: ehoreca_database
+      TZ: "Europe/Athens"
+
+networks:
+  ehoreca_network:
+    driver: bridge
+volumes:
+  ehoreca_db:
+    driver: local
