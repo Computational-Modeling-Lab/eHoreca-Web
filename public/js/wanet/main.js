@@ -33,7 +33,7 @@ function addMarks2Map(data) {
             data[i].location,
             data[i].id,
             null,
-            "http://51.15.85.46/images/markers/waste_container_" +
+            "https://ehoreca.cmodlab-iu.edu.gr/images/markers/waste_container_" +
                 icon +
                 ".vsmall.png",
             data[i].type

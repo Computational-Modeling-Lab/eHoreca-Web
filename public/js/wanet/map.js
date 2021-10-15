@@ -1,5 +1,5 @@
 var Api = new (function() {
-    this.URL = "http://51.15.85.46/api.php/";
+    this.URL = "https://ehoreca.cmodlab-iu.edu.gr/api/";
     this.post = function(endpoint, params, handler) {
         $.post(this.URL + endpoint, params, function(data, status, request) {
             var response = new ApiResponse(data);
@@ -255,7 +255,7 @@ function receiveLayer(response) {
     var layer = response.getWhole();
     var icon = layer.point_marker;
     if (icon != null) {
-        icon = "http://51.15.85.46/images/markers/" + icon;
+        icon = "https://ehoreca.cmodlab-iu.edu.gr/images/markers/" + icon;
     }
     //console.log(layer);
     for (var i = 0; i < layer.points.length; i++) {
@@ -283,7 +283,7 @@ function receiveLayer(response) {
 }
 
 function toggleLayer(layerId) {
-    var newURL = "http://51.15.85.46";
+    var newURL = "https://ehoreca.cmodlab-iu.edu.gr/";
     var enabledLayers = getEnabledLayers();
     if (enabledLayers == null) {
         $("#layer-" + layerId).addClass("active");
