@@ -1,61 +1,54 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400"></a></p>
+# Olive ObserverSensorium API and WebApp
 
-<p align="center">
-<a href="https://travis-ci.org/laravel/framework"><img src="https://travis-ci.org/laravel/framework.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+### System Requirements:
 
-## About Laravel
+1. php ^7.4
+2. MariaDB ^10 || MySQL ^8.0
+3. composer
+4. npm
+5. node 12.14
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Initial Setup
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Clone the project and go to its directory. Open a terminal in there and run the following commands:
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+1. `composer install`
+2. `npm install`
+3. `cp .env.example .env`
+4. Fill in the following in the .env file according to the system you run:
+   1. DB_DATABASE (with the name of a new database you create)
+   2. DB_USERNAME (mysql username with full access and privilages to the database)
+   3. DB_PASSWORD (mysql password for the user above)
+   4. ADMIN_PASS (for login as admin to the web app)
+5. `php artisan migrate:fresh --seed`
+6. `php artisan key:generate`
+7. `php artisan storage:link`
+8. `php artisan passport:install`
+9. `php artisan passport:keys`
+10. `php artisan passport:client --personal`
+11. `php artisan l5-swagger:generate`
 
-## Learning Laravel
+## Development Setup
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+Run in terminal the following commands:
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 1500 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+1. `php artisan serve`
+2. `npm run watch`
 
-## Laravel Sponsors
+## Docker Setup
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+Run the following commands:
 
-### Premium Partners
+1. `php artisan sail:install`
+   * Do not forget to make the nessecary changes to the .env file afterwards
+2. `./vendor/bin/sail up -d`
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[OP.GG](https://op.gg)**
+Then Run:
 
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+1. `./vendor/bin/sail artisan migrate:fresh --seed`
+2. `./vendor/bin/sail artisan key:generate`
+3. `./vendor/bin/sail artisan storage:link`
+4. `./vendor/bin/sail artisan passport:install`
+5. `./vendor/bin/sail artisan passport:client --personal`
+6. `./vendor/bin/sail artisan l5-swagger:generate`
+7. `./vendor/bin/sail npm run prod`
