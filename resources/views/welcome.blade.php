@@ -6,8 +6,9 @@
 </head>
 
 <body>
+
     <!-- Wrapper required for sidebar transitions -->
-    <div class="st-container">
+    <div id="main" class="st-container">
         @include('navbar')
         <!-- Sidebar component with st-effect-1 (set on the toggle button within the navbar) -->
         <aside class="sidebar left sidebar-size-1 sidebar-mini-reveal sidebar-offset-0 sidebar-skin-dark sidebar-visible-desktop" id=sidebar-menu data-type=collapse>
@@ -33,9 +34,22 @@
 
         <div id="main-map"></div>
         @include('footer')
-
     </div>
     @include('includes/scripts', ['includeMap' => true])
+    <script type="application/javascript">
+            var app = new Vue({
+                el: '#main',
+                data: {
+                },
+                mounted() {
+                    this.$nextTick(
+                        () => {
+                            initMap();
+                        }
+                    );
+                }
+            })
+    </script>
 </body>
 
 </html>

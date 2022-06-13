@@ -15,17 +15,18 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware(['cors'])->group(function () {
     // Users
-    Route::get('/users', 'UserController@index');
-    Route::get('/users/{id}', 'UserController@show');
+    Route::get('/users', 'UserController@index')->middleware('horeca.auth_admin');
+    Route::get('/users/{id}', 'UserController@show')->middleware('horeca.auth');
     Route::post('/users', 'UserController@store');
     Route::get('/users/w_producer/{id}', 'WProducerController@users');
     Route::put('/users/{id}', 'UserController@update')->middleware('horeca.auth');
     Route::delete('/users/{id}', 'UserController@destroy')->middleware('horeca.auth');
     Route::post('/login', 'UserController@login');
     Route::post('/logout', 'UserController@logout')->middleware('horeca.auth');
+    Route::post('/webLogout', 'UserController@webLogout');
     Route::get('/users/{id}/heatmaps', 'UserController@heatmaps')->middleware('horeca.auth_admin');
     Route::get('/users/{id}/routes', 'UserController@routes')->middleware('horeca.auth_admin');
-    Route::get('/users/{id}/reports', 'UserController@reports')->middleware('horeca.auth_admin');
+    Route::get('/users/{id}/reports', 'UserController@reports')->middleware('horeca.auth');
 
     // Bins
     Route::get('/bins', 'BinController@index');
@@ -83,7 +84,7 @@ Route::middleware(['cors'])->group(function () {
     Route::put('/w_producers/approve/{id}', 'WProducerController@approve_wprod')->middleware('horeca.auth_admin');
     Route::delete('/w_producers/{id}', 'WProducerController@destroy')->middleware('horeca.auth_w_prod');
     Route::post('/w_producers/employer', 'WProducerController@new_employer');
-    Route::post('/w_producers/employee', 'WProducerController@new_employee');
+    Route::post('/w_producers/employee/{id}', 'WProducerController@new_employee');
     Route::post('/w_producers/new_bin', 'WProducerController@new_bin')->middleware('horeca.auth_w_prod');
     Route::delete('/w_producers/{id}/bins', 'WProducerController@destroy_bin')->middleware('horeca.auth_w_prod');
 

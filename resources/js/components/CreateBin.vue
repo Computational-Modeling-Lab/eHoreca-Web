@@ -1,8 +1,25 @@
 <template>
   <div class="mt-5 px-1">
     <h1>New Bin</h1>
-
     <table class="data_table">
+      <tr v-if="instance==='admin'">
+        <th>Public bin<span class="red-text">*</span></th>
+        <td>
+          <select v-model="publicSelection">
+            <option selected value="false">No</option>
+            <option value="true">Yes</option>
+          </select>
+        </td>
+      </tr>
+      <tr v-if="!isPublic && instance==='admin'">
+        <th>Select large producer<span class="red-text">*</span></th>
+        <td>
+          <select v-model="w_producer_id">
+            <option disabled selected :value="undefined">Please select producer</option>
+            <option v-for="producer in largeProducers" :value="producer.id" :key="producer.id" >{{ producer.title }}</option>
+          </select>
+        </td>
+      </tr>
       <tr>
         <th>Type <span class="red-text">*</span></th>
         <td>
@@ -44,7 +61,7 @@
       <tr v-if="location">
         <th>Location <span class="red-text">*</span></th>
         <td>
-          <h2>Click on the map to move the point.</h2>
+          <h4>Click on the map to move the point.</h4>
           <div id="map" class="map-td">
             {{ location.lat }}-{{ location.lng }}
           </div>
@@ -83,7 +100,9 @@ export default {
       type: "",
       description: "",
       quantity: 0,
-      w_prod: this.w_producer || { id: null },
+      publicSelection: 'false',
+      largeProducers: [],
+      w_producer_id: undefined,
     };
   },
   props: {
@@ -91,12 +110,37 @@ export default {
       type: String,
       required: false,
     },
-    w_producer: {
-      type: Object || Array,
+  producerid: {
+      type: Number,
       required: false,
     },
   },
+  computed: {
+      isPublic() {
+        if (this.publicSelection === 'true') return true;
+        else return false;
+    }
+  },
+  created() {
+    if (this.instance === 'admin') this.getLargeProducers();
+  },
   methods: {
+    getLargeProducers () {
+      $.ajax({
+        url: `api/w_producers`,
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        contentType: "application/json",
+        success: (res) => {
+          this.largeProducers = res.results;
+        },
+        error: (err) => {
+          console.error('Get producer errors', err);
+        },
+      });
+    },
     mapController() {
       const mapElement = document.getElementById(`map`);
       const latLng = new google.maps.LatLng(
@@ -191,11 +235,7 @@ export default {
     },
     submitBtn() {
       var data;
-
-      if (this.instance === "w_producer") {
-        data = JSON.stringify({
-          w_producer_id: this.w_prod.id,
-          bin: {
+      const bin ={
             lat: parseFloat(this.location.lat),
             lng: parseFloat(this.location.lng),
             capacity: parseFloat(this.capacity),
@@ -203,18 +243,22 @@ export default {
             type: this.type,
             description: this.description,
             quantity: parseInt(this.quantity),
-          },
+            isPublic: this.isPublic
+      };
+      if (this.instance === 'admin' && !this.isPublic) {
+        if (!this.w_producer_id) return alert('Please select a producer');
+        bin.w_producer_id = this.w_producer_id;
+      }
+
+      console.log('bin:', bin);
+      if (this.instance === "w_producer") {
+        console.log('w_producer_id:', this.producerid);
+        data = JSON.stringify({
+          w_producer_id: this.producerid,
+          bin,
         });
       } else {
-        data = JSON.stringify({
-          lat: parseFloat(this.location.lat),
-          lng: parseFloat(this.location.lng),
-          capacity: parseFloat(this.capacity),
-          capacity_unit: this.capacity_unit,
-          type: this.type,
-          description: this.description,
-          quantity: parseInt(this.quantity),
-        });
+        data = JSON.stringify(bin);
       }
 
       $.ajax({
@@ -229,6 +273,7 @@ export default {
           switch (this.instance) {
             case "w_producer":
               this.$emit("submitevent");
+              window.location.href = "/list?table=bins&page=1";
               break;
             case "admin":
               window.location.href = "/list?table=bins&page=1";

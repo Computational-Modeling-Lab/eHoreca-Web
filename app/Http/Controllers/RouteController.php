@@ -120,11 +120,11 @@ class RouteController extends Controller
     public function destroy(int $id)
     {
         VehicleRoute::where('route_id', $id)->delete();
-
-        if (!Route::delete($id)) {
+        $route = Route::find($id);
+        if (!$route) {
             return \Helper::instance()->horeca_http_not_deleted();
         }
-
+        $route->delete();
         return response('');
     }
 }

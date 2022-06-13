@@ -15,24 +15,19 @@
         <div id="main-content" ref="mainContent">
             <div class="container text-center list_header">
                 <h1>{{title | titleSanitize}}</h1>
-                <div>
-                    <span v-if="['reports','bins'].indexOf(title) > -1">
-                        <input type="checkbox" id="checkbox" v-model="viewOwn" @click="changeShowing">
-                        <label for="checkbox">View Own</label>
-                        <label v-if="title !== 'reports'" >or</label>
-                    </span>
+                <div v-if="token !== null && (role==='admin' || (role==='w_producer' && title==='bins'))">
                     <button v-if="title !== 'reports'" class="btn btn-secondary" type="button" @click="onCreateNewHandler">Create new {{title.slice(0, -1) | titleSanitize}}</button>
                 </div>
             </div>
             <table class="data_table">
                 <tbody id="table_body">
-                    <col v-for="title in titles" v-if="title !=='id'" :class="[title==='location' ? 'loc' : '',title.includes('photos') ? 'photos' : '']">
+                    <col v-for="title in titles" v-if="title !=='id' && title!=='created at' && title!=='updated at' && title!=='created_at' && title!=='updated_at'" :class="[title==='location' ? 'loc' : '',title.includes('photos') ? 'photos' : '']">
                     </col>
                     <tr class="titles">
-                        <th v-for="title in titles" v-if="title !=='id'">{{title | titleSanitize}}</th>
+                        <th v-for="title in titles" v-if="title !=='id' && title!=='created at' && title!=='updated at' && title!=='created_at' && title!=='updated_at'">{{title | titleSanitize}}</th>
                     </tr>
                     <tr v-for="value in toShow" :key="value.id" @click="onRowClickHandler(value.id)">
-                        <td v-for="(val, title) in value" v-if="title !=='id'">
+                        <td v-for="(val, title) in value" v-if="title !=='id' && title!=='created at' && title!=='updated at' && title!=='created_at' && title!=='updated_at'">
                             <!-- Maps in td -->
                             <div :id="'map' + value.id" :ref="'map' + value.id" class="map-td" v-if="title==='location'">
                                 {{val.lat}}-{{val.lng}}
@@ -41,8 +36,7 @@
                             <!-- Images -->
                             <div v-else-if="title.includes('photos')" class="img-container">
                                 <div v-if="val.length > 0">
-                                    Total images: {{val.length}}<br>
-                                    <img :src="val[0]">
+                                    <img :src="assets + '/' + val[0]" class="report-photo">
                                 </div>
                                 <div v-if="val.length <= 0">No available images</div>
                             </div>
@@ -112,6 +106,9 @@
                 ownTotalPages: 0,
                 toShowPages: 0,
                 viewOwn: (localStorage.getItem('showOwn') === 'true') || false,
+                token: localStorage.getItem('token'),
+                role: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).role : '',
+                assets: "{{ asset('storage') }}",
             },
             filters: {
                 capitalize: function(value) {
@@ -202,10 +199,16 @@
                 }
             },
             created() {
+                const binId = new URLSearchParams(window.location.search).get('bin_id');
+                let url = `api/${this.title}?page=${this.currentPage}`;
+                const userId = localStorage.getItem('userId');
+                if (userId) url = url + `&user_id=${userId}`;
+                if (binId && this.title === 'reports') url = `api/bins/reports/${binId}`
+                
                 if (this.values.length <= 0) {
                     // All values
                     $.ajax({
-                        url: `api/${this.title}?page=${this.currentPage}`,
+                        url,
                         method: "GET",
                         headers: {
                             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -227,29 +230,29 @@
                         },
                     });
                     // Own values
-                    if (['reports', 'bins'].indexOf(this.title) !== false)
-                        $.ajax({
-                            url: `api/${this.title}?page=${this.currentPage}&user_id=${localStorage.getItem('userId')}`,
-                            method: "GET",
-                            headers: {
-                                Authorization: `Bearer ${localStorage.getItem("token")}`,
-                            },
-                            success: (res) => {
-                                this.ownValues = res;
+                    // if (['reports', 'bins'].indexOf(this.title) !== false)
+                    //     $.ajax({
+                    //         url: `api/${this.title}?page=${this.currentPage}&user_id=${localStorage.getItem('userId')}`,
+                    //         method: "GET",
+                    //         headers: {
+                    //             Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    //         },
+                    //         success: (res) => {
+                    //             this.ownValues = res;
 
-                                if (res.hasOwnProperty('data')) this.ownValues = res.data;
-                                if (res.hasOwnProperty('results')) this.ownValues = res.results;
-                                if (res.hasOwnProperty('total_pages')) this.ownTotalPages = res.total_pages;
+                    //             if (res.hasOwnProperty('data')) this.ownValues = res.data;
+                    //             if (res.hasOwnProperty('results')) this.ownValues = res.results;
+                    //             if (res.hasOwnProperty('total_pages')) this.ownTotalPages = res.total_pages;
 
-                                if (this.viewOwn && ['reports', 'bins'].indexOf(this.title) !== false) {
-                                    this.toShow = this.ownValues;
-                                    this.toShowPages = this.ownTotalPages;
-                                }
-                            },
-                            error: (err) => {
-                                console.error(err)
-                            },
-                        });
+                    //             if (this.viewOwn && ['reports', 'bins'].indexOf(this.title) !== false) {
+                    //                 this.toShow = this.ownValues;
+                    //                 this.toShowPages = this.ownTotalPages;
+                    //             }
+                    //         },
+                    //         error: (err) => {
+                    //             console.error(err)
+                    //         },
+                    //     });
                 }
             },
             mounted() {
@@ -265,6 +268,11 @@
             }
         })
     </script>
+        <style scoped lang=scss>
+        .report-photo{
+            max-width: 300px;
+        }
+    </style>
     @include('includes/scripts', ['includeMap' => false])
 
 </body>

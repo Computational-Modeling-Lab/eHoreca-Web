@@ -86,9 +86,7 @@ class VehicleController extends Controller
             array(
                 'plates' => 'required',
                 'type' => 'required|in:Φ.Ι.Χ. Ανοικτό,Φ.Ι.Χ. Κλειστό,Απορριμματοφόρο,Πλυντήριο κάδων,Σάρωθρο,Φ.Ι.Χ Τρίκυκλο,Φ.Ι.Χ. Ανατρεπόμενο,Φ.Ι.Χ. Βυτιοφόρο,Φ.Ι.Χ. Τράκτορας',
-                'make' => 'required',
                 'year_first_license' => 'required',
-                'taxable_hp' => 'required',
                 'payload' => 'required',
                 'payload_unit' => 'required',
                 'municipality' => 'required|in:ΚΕΡΚΥΡΑΙΩΝ,ΜΕΛΙΤΕΙΕΩΝ,ΘΙΝΑΛΙΩΝ,ΦΑΙΑΚΩΝ,ΕΣΠΕΡΙΩΝ,ΠΑΡΕΛΙΩΝ,ΑΧΙΛΛΕΙΩΝ,ΚΑΣΣΩΠΑΙΩΝ,ΠΑΛΑΙΟΚΑΣΤΡΙΤΩΝ,ΛΕΥΚΙΜΜΑΙΩΝ,ΑΓ. ΓΕΩΡΓΙΟΥ,ΚΟΡΙΣΣΙΩΝ',
@@ -194,11 +192,11 @@ class VehicleController extends Controller
     public function destroy($id)
     {
         VehicleRoute::where('vehicle_id', $id)->delete();
-
-        if (!Vehicle::delete($id)) {
+        $vehicle = Vehicle::find($id);
+        if (!$vehicle) {
             return \Helper::instance()->horeca_http_not_deleted();
         }
-
+        $vehicle->delete();
         return response('');
     }
 }

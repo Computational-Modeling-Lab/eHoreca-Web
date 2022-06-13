@@ -31,8 +31,8 @@ services:
   ehoreca_database:
     image: mysql:8.0
     restart: unless-stopped
-    ports:
-      - "${DB_HOST_PORT:-3306}:3306"
+    # ports:
+    #   - "${DB_HOST_PORT:-3306}:3306"
     environment:
       - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
       - MYSQL_DATABASE=${DB_DATABASE}

@@ -48,7 +48,7 @@
                         <template v-else-if="!title.includes('VehicleId')">
                             <tr v-for="(img, index) in value">
                                 <th>{{title | titleSanitize}} {{index + 1}}</th>
-                                <td><img :src="img"></td>
+                                <td><img :src="assets +'/' + img" class="report-photo"></td>
                             </tr>
                         </template>
                     </template>
@@ -112,6 +112,7 @@
                 titles: [],
                 values: [],
                 nonEditable: ['id', 'bin', 'created_at', 'updated_at'],
+                assets: "{{ asset('storage') }}"
             },
             filters: {
                 capitalize: function(value) {
@@ -339,6 +340,11 @@
             }
         })
     </script>
+    <style scoped lang=scss>
+        .report-photo{
+            max-width: 300px;
+        }
+    </style>
     @include('includes/scripts', ['includeMap' => false])
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAWBSaVKwwQ4OFN7xtLC6sCmqkMOW-zJ-8&amp;callback=initMaps" async defer></script>
 

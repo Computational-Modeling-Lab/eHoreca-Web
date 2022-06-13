@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\ReportResource;
 use App\Models\Report;
+use App\Models\User;
 use Illuminate\Http\Request;
+use App\Models\WProducer;
 
 class ReportController extends Controller
 {
@@ -15,19 +17,44 @@ class ReportController extends Controller
      */
     public function index(Request $request)
     {
-        $toReturn = Report::where('w_producer_id', null)->orderBy('id', 'DESC');
-
-        if ($request->query('user_id'))
-            $toReturn->where('user_id', $request->query('user_id'));
-
-        if ($request->input('approved'))
-            $toReturn->where('approved', true);
-
-        if ($request->query('page'))
-            $toReturn->offset(config('consts.page_size') * ($request->query('page') - 1))->limit(config('consts.page_size'));
-
-        $toReturn = ReportResource::collection($toReturn->get());
-
+        // return Report::where('approved', $request->query('approved'))->get();
+        $toReturn = [];
+        $user = User::find($request->user_id);
+        if ($user) {
+            if ($user->role==='admin') {
+                $toReturn = Report::where(
+                    function ($query) use ($request) {
+                        if (isset($request->approved)) $query
+                            ->where('approved', $request->query('approved'));
+                        if (isset($request->page)) $query
+                            ->offset(config('consts.page_size') * ($request->query('page') - 1))->limit(config('consts.page_size'));
+                    }
+                )
+                ->get();
+                $toReturn = ReportResource::collection($toReturn);
+            }
+            if ($user->role!=='admin' && $user->role!=='public') {
+                $wProducers = WProducer::all();
+                $producer = null;
+                foreach($wProducers as $w_producerRecord) {
+                    if (isset($w_producerRecord->users) && in_array($request->user_id, $w_producerRecord->users)) {
+                        $producer = $w_producerRecord;
+                    }
+                };
+                if ($producer) {
+                    $toReturn = Report::whereIn('bin_id', $producer->bins)
+                    ->where(
+                        function ($query) use ($request) {
+                            if (isset($request->approved)) $query
+                                ->where('approved', $request->query('approved'));
+                            if (isset($request->page)) $query
+                                ->offset(config('consts.page_size') * ($request->query('page') - 1))->limit(config('consts.page_size'));
+                        }
+                    )
+                    ->get();
+                }
+            }
+        }
         return array('results' => $toReturn, 'total_pages' => \Helper::instance()->get_total_pages(count($toReturn)));
     }
 
@@ -85,6 +112,7 @@ class ReportController extends Controller
         if ($request->images) {
             $paths = [];
             foreach ($request->images as $image) {
+                $image = str_replace("data:image/png;base64,", "", $image);
                 $filepath = config('consts.report_photos_dir') . "/bin__$id/" . \Str::random(4) . '.jpg';
                 \Storage::disk('public')->put($filepath, base64_decode($image));
                 $paths[] = $filepath;
@@ -190,9 +218,10 @@ class ReportController extends Controller
      */
     public function destroy($id)
     {
-        if (!Report::delete($id))
+        $report = Report::find($id);
+        if (!$report)
             return \Helper::instance()->horeca_http_not_deleted();
-
+        $report->delete();
         return response('');
     }
 }

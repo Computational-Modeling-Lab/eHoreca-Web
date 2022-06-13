@@ -117,9 +117,10 @@ class POISController extends Controller
      */
     public function destroy($id)
     {
-        if (!Pois::delete($id))
+        $pois = Pois::find($id);
+        if (!$pois)
             return \Helper::instance()->horeca_http_not_deleted();
-
+        $pois->delete();
         return response('');
     }
 }

@@ -13,7 +13,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        \URL::forceScheme('https');
+        if (env('API_URL')!=='http://127.0.0.1:8000/api' && env('API_URL')!=='http://192.168.1.2:8000/api') \URL::forceScheme('https');
     }
 
     /**

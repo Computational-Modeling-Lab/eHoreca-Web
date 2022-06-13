@@ -8,6 +8,8 @@
             window.location.replace("/login");
         }
     }
+
+    window.API_URL = `{{ config('app.api_url')}}`;
 </script>
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -25,3 +27,4 @@
 <!-- <script src="weekstart.js"></script> -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vue-datetime@1.0.0-beta.10/dist/vue-datetime.min.css">
 <script src="https://cdn.jsdelivr.net/npm/vue-datetime@1.0.0-beta.10/dist/vue-datetime.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>

@@ -117,9 +117,9 @@ class HeatmapController extends Controller
      */
     public function destroy($id)
     {
-        if (!Heatmap::delete($id))
-            return \Helper::instance()->horeca_http_not_deleted();
-
+        $heatmap = Heatmap::find($id);
+        if (!$heatmap) return \Helper::instance()->horeca_http_not_deleted();
+        $heatmap->delete();
         return response('');
     }
 }

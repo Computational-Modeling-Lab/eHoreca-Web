@@ -28,7 +28,7 @@ class Report extends Model
         // if no images are uploaded it could be null
         if (isset($filenames)) {
             foreach (json_decode($filenames) as $filename) {
-                $paths[] = Storage::url($filename);
+                $paths[] = $filename;
             }
         }
         return $paths;

@@ -1,5 +1,5 @@
 var Api = new (function() {
-    this.URL = "https://ehoreca.cmodlab-iu.edu.gr/api/";
+    this.URL = window.API_URL;
     this.post = function(endpoint, params, handler) {
         $.post(this.URL + endpoint, params, function(data, status, request) {
             var response = new ApiResponse(data);
@@ -133,20 +133,21 @@ function addPoint(map, position, title, label, icon, type) {
         "click",
         (function(marker, title) {
             return function() {
-                let content =
-                    '<ol id="' +
-                    title +
-                    '"><li class="tooltip-item"><a href="/report?bin=' +
-                    title +
-                    "&lat=" +
-                    position.lat +
-                    "&lng=" +
-                    position.lng +
-                    '">Report</a></li><li class="tooltip-item"><a onclick="window.location=\'list.php?show=reports&id=' +
-                    localStorage.getItem("user_id") +
-                    "&bin_id=" +
-                    title +
-                    "'\">See reports</a></li></ol>";
+                const content = 
+                    `<ol id="${title}">
+                        <h4>Bin ${title}</h4>
+                        <li class="tooltip-item">
+                            <a href="/report?bin=${title}&lat=${position.lat}&lng=${position.lng}">
+                                Report
+                            </a>
+                        </li>
+                        <li class="tooltip-item">
+                            <a href="/list?table=reports&id=${localStorage.getItem("userId")}&bin_id=${title}&page=1">
+                                See reports
+                            </a>
+                        </li>
+                    </ol>`;
+
                 // If at least one pop up is opened, close it before showing the next one.
                 if (lastPopUp !== undefined) {
                     lastPopUp.close();

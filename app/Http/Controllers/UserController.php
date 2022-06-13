@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\WProducer;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Session;
 
 class UserController extends Controller
 {
@@ -78,14 +80,22 @@ class UserController extends Controller
 
         $request['password'] = Hash::make($request->input('password'));
 
-        $user = User::where('email', '=', $request->input('email'))->first();
+        $user = User::where('email', '=', $request->input('email'))->withTrashed()->first();
 
-        if ($user) {
-            return \Helper::instance()->horeca_http_not_created(config('consts.duplicate_email'));
+        if ($user) return \Helper::instance()->horeca_http_not_created(config('consts.duplicate_email'));
+
+        if ($request->input('role') === 'w_producer' || $request->input('role') === 'w_producer_employee') {
+            if (!isset($request->w_producer_id)) return \Helper::instance()->horeca_http_not_created();
+            $w_producer = WProducer::find($request->w_producer_id);
+            if (!$w_producer) return \Helper::instance()->horeca_http_not_created();
         }
 
-        if (!User::create($request->all())) {
-            return \Helper::instance()->horeca_http_not_created();
+        $user = User::create($request->all());
+        if (!$user) return \Helper::instance()->horeca_http_not_created();
+
+        if ($w_producer) {
+            $w_producer->users = app('App\Http\Controllers\WProducerController')->append_to_users_array($w_producer->users, $user->id);
+            $w_producer->save();
         }
 
         return \Helper::instance()->horeca_http_created();
@@ -142,7 +152,7 @@ class UserController extends Controller
      */
     public function destroy($id)
     {
-        if (!User::delete($id)) {
+        if (!User::destroy($id)) {
             return \Helper::instance()->horeca_http_not_deleted();
         }
 
@@ -165,7 +175,7 @@ class UserController extends Controller
     public function login(Request $request)
     {
         $validator = \Validator::make($request->all(), array(
-            'email' => 'required|email',
+            'email' => 'required|email|exists:users,email',
             'password' => 'required',
         ));
 
@@ -173,37 +183,31 @@ class UserController extends Controller
             return response($validator->messages(), 400);
         }
 
-        // Look for user by email
-        $user = User::where('email', '=', $request->input('email'))->first();
-
-        if ($user) {
-            if (Hash::check($request->input('password'), $user['password'])) {
-                // generate api token and persist to DB
-                $user->token = \Str::random(32);
-                if (!$user->save()) {
-                    return \Helper::instance()->horeca_http_not_updated(config('consts.no_login'));
-                }
-
-                return response(['token' => $user->token, 'id' => $user->id], 200);
-            } else {
-                return \Helper::instance()->horeca_http_no_access(config('consts.wrong_pass'));
-            }
-        }
-
-        // let user know he is not registered
-        return \Helper::instance()->horeca_http_not_found(config('consts.not_found_email'));
+        $userLoggedIn = Auth::attempt(['email' => $request->email, 'password' => $request->password], true);
+        if (!$userLoggedIn) return response('Could not log in', 403);
+       
+        $user = Auth::user();
+        if ($user) return response(['token' => $user->token, 'id' => $user->id], 200);
     }
 
     public function logout(Request $request)
     {
         $user = User::where('token', '=', $request->bearerToken())->first();
-
+        Auth::logout();
+        Session::flush();
         // Do not check if user exists. We know they do since they pass the middleware. If they do not, they will receive a response accordingly automatically
         $user->token = null;
         if (!$user->save()) {
             return \Helper::instance()->horeca_http_not_updated(config('consts.no_logout'));
         }
 
+        return response('');
+    }
+
+    public function webLogout(Request $request)
+    {
+        Auth::logout();
+        Session::flush();
         return response('');
     }
 }

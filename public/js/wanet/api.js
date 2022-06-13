@@ -1,6 +1,4 @@
-// const URL = "http://localhost:3000/api";
-const URL = "https://ehoreca.cmodlab-iu.edu.gr/api";
-
+const URL = window.API_URL;
 var endpointsCalled = [];
 
 function logIn(email, password, callback) {
@@ -12,7 +10,7 @@ function logIn(email, password, callback) {
         .done(function(res) {
             localStorage.setItem("token", res.token);
             localStorage.setItem("userId", res.id);
-            getUser(false);
+            getUser();
         })
         .error(err => {
             callback(err);
@@ -21,7 +19,7 @@ function logIn(email, password, callback) {
 
 window.logOut = () => {
     $.ajax({
-        url: `${URL}/logout`,
+        url: `${URL}/webLogout`,
         type: "POST",
         headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`
@@ -35,7 +33,7 @@ window.logOut = () => {
     });
 };
 
-function getUser(isProfilePage = true) {
+function getUser() {
     $.ajax({
         url: `${URL}/users/${localStorage.getItem("userId")}`,
         method: "GET",
@@ -43,12 +41,6 @@ function getUser(isProfilePage = true) {
             Authorization: `Bearer ${localStorage.getItem("token")}`
         },
         success: res => {
-            if (isProfilePage) {
-                $("#user_name").text(res.name + " " + res.surname);
-                $("#user_email").text(res.email);
-                $("#user_role").text(res.role);
-                return;
-            }
             localStorage.setItem(
                 "user",
                 JSON.stringify({
@@ -62,6 +54,28 @@ function getUser(isProfilePage = true) {
     });
 }
 
+function getUserInfo() {
+    return axios.get(
+        `${URL}/users/${localStorage.getItem("userId")}`,
+        {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`
+            }
+        }
+    );
+}
+
+function getProducerFromUserId () {
+    return axios.get(
+        `${URL}/w_producers/from_user_id/${localStorage.getItem("userId")}`,
+        {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`
+            }
+        }
+    );
+}
+
 function userAuth(redirectTo = "login") {
     if (!localStorage.getItem("token")) window.location.href = redirectTo;
 }
@@ -72,6 +86,13 @@ function userAuth(redirectTo = "login") {
  */
 
 function getBins(type) {
+    let role;
+    const localStorageUser = localStorage.getItem("user");
+    if (localStorageUser) {
+        const parsed = JSON.parse(localStorageUser)
+        role = parsed.role;
+     }
+
     bounds = new google.maps.LatLngBounds();
     if (!endpointsCalled.includes(type)) {
         $("#" + type).addClass("active");
@@ -82,8 +103,8 @@ function getBins(type) {
         clearMap(type);
         return;
     }
-    newURL = `${URL}/bins?type=${type}`;
-
+    let newURL = `${URL}/bins?type=${type}`;
+    if (role === 'public' || !role) newURL += `&public=1`;
     $.ajax({
         url: newURL,
         crossDomain: true

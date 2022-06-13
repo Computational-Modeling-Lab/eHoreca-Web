@@ -209,11 +209,6 @@ form {
     padding: 1em;
 }
 
-.report-photo {
-    width: 10em;
-    height: 10em;
-}
-
 td > input,
 input.vdatetime-input,
 select,

@@ -33,13 +33,13 @@
             </form> --}}
             <ul class="nav navbar-nav navbar-right ">
                 <!-- Admin -->
-                <li class="dropdown">
+                <li class="dropdown" v-if="token !== null && role!=='public'">
                     <a href="list?table=reports&page=1" class="dropdown-toggle">
                         <!-- <i class="fa fa-fw fa-lock"></i> -->
                         Reports
                     </a>
                 </li>
-                <li class="dropdown" v-if="role === 'admin'">
+                <li class="dropdown" v-if="token !== null">
                     <a href="list?table=bins&page=1" class="dropdown-toggle">
                         <!-- <i class="fa fa-fw fa-plus"></i>  -->
                         Bins
@@ -49,13 +49,6 @@
                     <a href="list?table=routes&page=1" class="dropdown-toggle">
                         <!-- <i class="fa fa-fw fa-plus"></i>  -->
                         Routes
-                    </a>
-                </li>
-                <li class="dropdown" v-if="role === 'admin'">
-                    {{-- <a href="list?table=heatmaps&page=1" class="dropdown-toggle"> --}}
-                    <a class="dropdown-toggle" style="color: #999999">
-                        <!-- <i class="fa fa-fw fa-plus"></i>  -->
-                        Heatmaps
                     </a>
                 </li>
                 <li class="dropdown" v-if="role === 'admin'">
@@ -74,14 +67,6 @@
                     <a href="list?table=w_producers&page=1" class="dropdown-toggle">
                         <!-- <i class="fa fa-fw fa-lock"></i> -->
                         Large Producers
-                    </a>
-                </li>
-
-                <!-- W_Producer -->
-                <li class="dropdown" v-if="role === 'w_producer' || role === 'w_producer_employee'">
-                    <a href="manage" class="dropdown-toggle">
-                        <!-- <i class="fa fa-fw fa-plus"></i>  -->
-                        Business
                     </a>
                 </li>
 

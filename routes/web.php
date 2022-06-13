@@ -22,4 +22,3 @@ Route::view('/list', 'list');
 Route::view('/row', 'row');
 Route::view('/create', 'create');
 Route::view('/report', 'report');
-Route::view('/manage', 'manage');

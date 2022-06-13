@@ -22,14 +22,6 @@
         }
     };
 </script>
-<?php
-if (isset($includeMap) && $includeMap) {
-?>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAWBSaVKwwQ4OFN7xtLC6sCmqkMOW-zJ-8&amp;callback=initMap" async defer></script>
-    <script src="{{asset('js/wanet/map.js')}}"></script>
-<?php
-}
-?>
 <script src="{{asset('js/vendor/all.js')}}"></script>
 <script src="{{asset('js/app/essentials.js')}}"></script>
 <script src="{{asset('js/app/layout.js')}}"></script>
@@ -39,3 +31,7 @@ if (isset($includeMap) && $includeMap) {
 <script src="{{asset('js/wanet/main.js')}}"></script>
 <script src="{{asset('js/wanet/api.js')}}"></script>
 <script src="{{asset('js/wanet/list.js')}}"></script>
+<script src="{{ asset('js/wanet/map.js') }}"></script>
+@if($includeMap)
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAWBSaVKwwQ4OFN7xtLC6sCmqkMOW-zJ-8"></script>
+@endif

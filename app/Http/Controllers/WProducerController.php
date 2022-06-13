@@ -34,23 +34,29 @@ class WProducerController extends Controller
     // Append the userId as a url parameter, find the w_producer with this userId inside the users array and return the w_producer
     public function from_user_id($id)
     {
-        // $toReturn = WProducer::whereRaw("json_contains(`users`, $id)")->get();
-        $toReturn = WProducer::where('users', 'like', "%{$id}%")->get();
+        $toReturn = WProducer::get();
+        foreach($toReturn as $w_producerRecord) {
+            if (isset($w_producerRecord->users) && in_array($id, $w_producerRecord->users)) {
+                return $w_producerRecord;
+            }
+        };
+        // $toReturn = WProducer::where('users', "$id")->get();
 
-        if (isset($toReturn) && count($toReturn) > 0) {
-            return $toReturn;
-        }
+        // if (isset($toReturn) && count($toReturn) > 0) {
+        //     return $toReturn;
+        // }
 
         return \Helper::instance()->horeca_http_not_found(config('consts.not_found_w_producer'));
     }
 
     public function approve_wprod($id)
     {
-        if (!WProducer::where('id', $id)->update(array('is_approved' => true))) {
+        $wProducer = WProducer::where('id', $id)->first();
+        if (!$wProducer) {
             return \Helper::instance()->horeca_http_not_updated();
         }
-
-        return response('');
+        $wProducer->update(array('is_approved' => true));
+        return response('Producer approved');
     }
 
     // Route::post('/w_producers/employer', 'WProducerController@new_employer');
@@ -86,6 +92,7 @@ class WProducerController extends Controller
         // most likely, producer
         if (isset($request['join_pin'])) {
             $w_producer = $this->producer_exists($request->input('join_pin'));
+            if ($w_producer) return response('Join pin already exists', 406);
         }
 
         $request = $request->all();
@@ -199,20 +206,15 @@ class WProducerController extends Controller
     public function new_employee(Request $request)
     {
         if ($request->join_pin) {
-            $w_producer = WProducer::where('join_pin', $request->input('join_pin'))->where('id', $request->input('w_producer_id'))->first();
+            $w_producer = WProducer::where('join_pin', $request->input('join_pin'))
+            ->where('id', $request->id)
+            ->first();
             if ($w_producer) {
                 $userResult = $this->user_exists($request->input('email')); // get the user status
                 $user_id = 0;
 
-                if ($userResult) {
-                    if (!$this->is_user_auth($request->input('email'), $request->input('password'))) {
-                        return \Helper::instance()->horeca_http_no_access(config('consts.wrong_pass'));
-                    }
-                    $user = User::find($userResult);
-                    $user->role = 'w_producer_employee';
-                    $user->save();
-                    $user_id = $userResult;
-                } else {
+                if ($userResult) return response('User with this email already exists', 406);
+                else {
                     unset($request['join_pin']);
                     $request['role'] = 'w_producer_employee';
                     $request['password'] = Hash::make($request['password']);
@@ -222,14 +224,14 @@ class WProducerController extends Controller
                 if ($user_id) {
                     $w_producer->users = $this->append_to_users_array($w_producer->users, $user_id);
                     $w_producer->save();
-                    return response('');
+                    return response('User created', 200);
                 }
             }
 
             return \Helper::instance()->horeca_http_not_found(config('consts.not_found_w_producer'));
         }
 
-        return response('', 400);
+        return response('Join pin required', 400);
     }
 
     // Check if the user already exists, if yes return the id, else return false
@@ -263,9 +265,13 @@ class WProducerController extends Controller
         }
     }
 
-    private function append_to_users_array($w_producer_users, $user)
+    public function append_to_users_array($w_producer_users, $user)
     {
-        if (!in_array($user, $w_producer_users)) {
+        if (!isset($w_producer_users)) {
+            return [$user];
+        }
+        
+        if (isset($w_producer_users) && !in_array($user, $w_producer_users)) {
             return array_merge($w_producer_users, [$user]);
         }
 
@@ -276,9 +282,10 @@ class WProducerController extends Controller
     // Create a new bin, and add the bin ID to the bins column
     public function new_bin(Request $request)
     {
+        // return gettype($request->bin);
         $validator = \Validator::make(
             $request->all(),
-            array(
+            [
                 'w_producer_id' => 'required',
                 'bin.lat' => 'required',
                 'bin.lng' => 'required',
@@ -287,7 +294,7 @@ class WProducerController extends Controller
                 'bin.type' => 'required|in:compost,glass,recyclable,mixed,metal,paper,plastic',
                 'bin.description' => 'required',
                 'bin.quantity' => 'required',
-            )
+            ]
         );
 
         if ($validator->fails()) {
@@ -366,7 +373,8 @@ class WProducerController extends Controller
         $w_producer_bin_ids = WProducer::where('id', $id)->pluck('bins')->first();
 
         foreach ($w_producer_bin_ids as $bin_id) {
-            array_push($toReturn, Bin::where('id', $bin_id)->get()->first());
+            $bin = Bin::where('id', $bin_id)->first();
+            if ($bin) array_push($toReturn, $bin);
         }
 
         return $toReturn;
@@ -428,11 +436,12 @@ class WProducerController extends Controller
      */
     public function destroy($id)
     {
-        if (!WProducer::delete($id)) {
+        $wproducer = WProducer::find($id);
+        if (!$wproducer) {
             return \Helper::instance()->horeca_http_not_deleted();
         }
-
-        return response('');
+        $wproducer->delete();
+        return response('W_producer deleted');
     }
 
     // w_producer id
@@ -443,7 +452,7 @@ class WProducerController extends Controller
         if (!$w_producer) {
             return \Helper::instance()->horeca_http_not_found(config('consts.not_found_w_producer'));
         }
-
+        
         if (in_array($request->input('bin_id'), $w_producer->bins)) {
             $new_bins = $w_producer->bins;
             $key = array_search($request->input('bin_id'), $new_bins);
@@ -451,10 +460,8 @@ class WProducerController extends Controller
                 unset($new_bins[$key]);
                 $w_producer->bins = array_merge($new_bins, []);
                 $w_producer->save();
-
-                Bin::delete($request->input('bin_id'));
-
-                return response('');
+                $bin = Bin::where('id', $request->input('bin_id'))->first()->delete();
+                return response('Bin Deleted');
             }
         }
         return \Helper::instance()->horeca_http_not_found(config('consts.not_found_bin'));

@@ -54,6 +54,15 @@
                     </select>
                 </td>
             </tr>
+            <tr v-if="role==='w_producer' || role==='w_producer_employee'">
+                <th>Large producer</th>
+                <td>
+                <select v-model="w_producer_id">
+                    <option disabled selected :value="undefined">Please select producer</option>
+                    <option v-for="producer in largeProducers" :value="producer.id" :key="producer.id" >{{ producer.title }}</option>
+                </select>
+                </td>
+            </tr>
             <tr>
                 <th>Password</th>
                 <td>
@@ -101,23 +110,39 @@ export default {
             password: "",
             passwordRepeat: "",
             role: "",
-            details: ""
+            details: "",
+            join_pin: undefined,
+            w_producer_id: undefined,
+            largeProducers: []
         };
     },
+    created() {
+        this.getLargeProducers();
+    },
     methods: {
+        getLargeProducers () {
+            $.ajax({
+                url: `api/w_producers`,
+                method: "GET",
+                headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+                },
+                contentType: "application/json",
+                success: (res) => {
+                    console.log('res:', res);
+                    this.largeProducers = res.results;
+                },
+                error: (err) => {
+                console.error('Get producer errors', err);
+                },
+            });
+        },
         submitBtn() {
             if (this.password != this.passwordRepeat) {
                 alert('The passwords do not match!');
                 return;
             }
-
-            $.ajax({
-                url: `api/users`,
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
-                },
-                data: JSON.stringify({
+            const body = {
                     name: this.name,
                     surname: this.surname,
                     email: this.email,
@@ -125,7 +150,18 @@ export default {
                     role: this.role,
                     details: this.details,
                     password: this.password
-                }),
+            }
+
+            if (this.role==='w_producer' || this.role==='w_producer_employee') {
+                body.w_producer_id = this.w_producer_id;
+            }
+            $.ajax({
+                url: `api/users`,
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                },
+                data: JSON.stringify(body),
                 dataType: "json",
                 contentType: "application/json",
                 success: res =>

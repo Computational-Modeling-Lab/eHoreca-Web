@@ -3,7 +3,7 @@
 namespace App\Http\Middleware;
 
 use Closure;
-
+use App\Models\User;
 class CheckToken
 {
     /**
@@ -18,7 +18,7 @@ class CheckToken
         if(!$request->bearerToken())
             return \Helper::instance()->horeca_http_no_access();
 
-        if (\DB::table('users')->where('token', $request->bearerToken())->first())
+        if (User::where('token', $request->bearerToken())->first())
             return $next($request);
 
         return \Helper::instance()->horeca_http_no_access();

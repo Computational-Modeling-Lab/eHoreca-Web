@@ -3,7 +3,7 @@
 namespace App\Http\Middleware;
 
 use Closure;
-
+use App\Models\User;
 class CheckTokenAdmin
 {
     /**
@@ -18,7 +18,7 @@ class CheckTokenAdmin
         if(!$request->bearerToken())
             return \Helper::instance()->horeca_http_no_access();
 
-        $user = \DB::table('users')->where('token', $request->bearerToken())->first();
+        $user = User::where('token', $request->bearerToken())->first();
         if ($user->role === 'admin')
             return $next($request);
 

@@ -72,7 +72,7 @@
             $("#main-content").css('margin-top', $(".navbar-fixed-top").height() + 20);
         });
     </script>
-
+    @include('includes/scripts', ['includeMap' => false])
 </body>
 
 @include('footer')

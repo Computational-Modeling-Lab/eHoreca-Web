@@ -1999,6 +1999,23 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
 //
 //
 //
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 /* harmony default export */ __webpack_exports__["default"] = ({
   data: function data() {
     return {
@@ -2012,9 +2029,9 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
       type: "",
       description: "",
       quantity: 0,
-      w_prod: this.w_producer || {
-        id: null
-      }
+      publicSelection: 'false',
+      largeProducers: [],
+      w_producer_id: undefined
     };
   },
   props: {
@@ -2022,14 +2039,40 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
       type: String,
       required: false
     },
-    w_producer: {
-      type: Object || Array,
+    producerid: {
+      type: Number,
       required: false
     }
   },
+  computed: {
+    isPublic: function isPublic() {
+      if (this.publicSelection === 'true') return true;else return false;
+    }
+  },
+  created: function created() {
+    if (this.instance === 'admin') this.getLargeProducers();
+  },
   methods: {
-    mapController: function mapController() {
+    getLargeProducers: function getLargeProducers() {
       var _this = this;
+
+      $.ajax({
+        url: "api/w_producers",
+        method: "GET",
+        headers: {
+          Authorization: "Bearer ".concat(localStorage.getItem("token"))
+        },
+        contentType: "application/json",
+        success: function success(res) {
+          _this.largeProducers = res.results;
+        },
+        error: function error(err) {
+          console.error('Get producer errors', err);
+        }
+      });
+    },
+    mapController: function mapController() {
+      var _this2 = this;
 
       var mapElement = document.getElementById("map");
       var latLng = new google.maps.LatLng(parseFloat(mapElement.textContent.split("-")[0]), parseFloat(mapElement.textContent.split("-")[1]));
@@ -2088,40 +2131,42 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
         map: map
       });
       map.addListener("click", function (e) {
-        _this.location.lat = e.latLng.lat();
-        _this.location.lng = e.latLng.lng();
+        _this2.location.lat = e.latLng.lat();
+        _this2.location.lng = e.latLng.lng();
         marker.setPosition(e.latLng);
         map.panTo(e.latLng);
       });
     },
     submitBtn: function submitBtn() {
-      var _this2 = this;
+      var _this3 = this;
 
       var data;
+      var bin = {
+        lat: parseFloat(this.location.lat),
+        lng: parseFloat(this.location.lng),
+        capacity: parseFloat(this.capacity),
+        capacity_unit: this.capacity_unit,
+        type: this.type,
+        description: this.description,
+        quantity: parseInt(this.quantity),
+        isPublic: this.isPublic
+      };
+
+      if (this.instance === 'admin' && !this.isPublic) {
+        if (!this.w_producer_id) return alert('Please select a producer');
+        bin.w_producer_id = this.w_producer_id;
+      }
+
+      console.log('bin:', bin);
 
       if (this.instance === "w_producer") {
+        console.log('w_producer_id:', this.producerid);
         data = JSON.stringify({
-          w_producer_id: this.w_prod.id,
-          bin: {
-            lat: parseFloat(this.location.lat),
-            lng: parseFloat(this.location.lng),
-            capacity: parseFloat(this.capacity),
-            capacity_unit: this.capacity_unit,
-            type: this.type,
-            description: this.description,
-            quantity: parseInt(this.quantity)
-          }
+          w_producer_id: this.producerid,
+          bin: bin
         });
       } else {
-        data = JSON.stringify({
-          lat: parseFloat(this.location.lat),
-          lng: parseFloat(this.location.lng),
-          capacity: parseFloat(this.capacity),
-          capacity_unit: this.capacity_unit,
-          type: this.type,
-          description: this.description,
-          quantity: parseInt(this.quantity)
-        });
+        data = JSON.stringify(bin);
       }
 
       $.ajax({
@@ -2133,10 +2178,11 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
         data: data,
         contentType: "application/json",
         success: function success(res) {
-          switch (_this2.instance) {
+          switch (_this3.instance) {
             case "w_producer":
-              _this2.$emit("submitevent");
+              _this3.$emit("submitevent");
 
+              window.location.href = "/list?table=bins&page=1";
               break;
 
             case "admin":
@@ -2171,7 +2217,7 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
     }
   },
   mounted: function mounted() {
-    var _this3 = this;
+    var _this4 = this;
 
     switch (this.instance) {
       case "w_producer":
@@ -2200,9 +2246,9 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
                 };
 
               case 2:
-                _this3.location = _context.sent;
+                _this4.location = _context.sent;
                 setTimeout(function () {
-                  _this3.mapController();
+                  _this4.mapController();
                 }, 250);
 
               case 4:
@@ -2217,7 +2263,7 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
         return _ref.apply(this, arguments);
       };
     }(), function () {
-      return _this3.mapController();
+      return _this4.mapController();
     });
   }
 });
@@ -2793,6 +2839,15 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
+//
+//
+//
+//
+//
+//
+//
+//
 /* harmony default export */ __webpack_exports__["default"] = ({
   data: function data() {
     return {
@@ -2803,14 +2858,53 @@ __webpack_require__.r(__webpack_exports__);
       password: "",
       passwordRepeat: "",
       role: "",
-      details: ""
+      details: "",
+      join_pin: undefined,
+      w_producer_id: undefined,
+      largeProducers: []
     };
   },
+  created: function created() {
+    this.getLargeProducers();
+  },
   methods: {
+    getLargeProducers: function getLargeProducers() {
+      var _this = this;
+
+      $.ajax({
+        url: "api/w_producers",
+        method: "GET",
+        headers: {
+          Authorization: "Bearer ".concat(localStorage.getItem("token"))
+        },
+        contentType: "application/json",
+        success: function success(res) {
+          console.log('res:', res);
+          _this.largeProducers = res.results;
+        },
+        error: function error(err) {
+          console.error('Get producer errors', err);
+        }
+      });
+    },
     submitBtn: function submitBtn() {
       if (this.password != this.passwordRepeat) {
         alert('The passwords do not match!');
         return;
+      }
+
+      var body = {
+        name: this.name,
+        surname: this.surname,
+        email: this.email,
+        username: this.username,
+        role: this.role,
+        details: this.details,
+        password: this.password
+      };
+
+      if (this.role === 'w_producer' || this.role === 'w_producer_employee') {
+        body.w_producer_id = this.w_producer_id;
       }
 
       $.ajax({
@@ -2819,15 +2913,7 @@ __webpack_require__.r(__webpack_exports__);
         headers: {
           Authorization: "Bearer ".concat(localStorage.getItem("token"))
         },
-        data: JSON.stringify({
-          name: this.name,
-          surname: this.surname,
-          email: this.email,
-          username: this.username,
-          role: this.role,
-          details: this.details,
-          password: this.password
-        }),
+        data: JSON.stringify(body),
         dataType: "json",
         contentType: "application/json",
         success: function success(res) {
@@ -2852,6 +2938,7 @@ __webpack_require__.r(__webpack_exports__);
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
+//
 //
 //
 //
@@ -9071,7 +9158,7 @@ exports = module.exports = __webpack_require__(/*! ../../../node_modules/css-loa
 
 
 // module
-exports.push([module.i, "\n.same-line[data-v-a5b121e0] {\n  display: flex;\n  flex-direction: row;\n}\n", ""]);
+exports.push([module.i, "\n.same-line[data-v-a5b121e0] {\r\n  display: flex;\r\n  flex-direction: row;\n}\r\n", ""]);
 
 // exports
 
@@ -9090,7 +9177,7 @@ exports = module.exports = __webpack_require__(/*! ../../../node_modules/css-loa
 
 
 // module
-exports.push([module.i, "\n.tr-map[data-v-c57589dc] {\n  height: 40vh;\n}\n.map-td[data-v-c57589dc] {\n  height: 50vh;\n}\ntr[data-v-c57589dc]:hover {\n  cursor: default;\n}\n", ""]);
+exports.push([module.i, "\n.tr-map[data-v-c57589dc] {\r\n  height: 40vh;\n}\n.map-td[data-v-c57589dc] {\r\n  height: 50vh;\n}\ntr[data-v-c57589dc]:hover {\r\n  cursor: default;\n}\r\n", ""]);
 
 // exports
 
@@ -9109,7 +9196,7 @@ exports = module.exports = __webpack_require__(/*! ../../../node_modules/css-loa
 
 
 // module
-exports.push([module.i, "\n#map[data-v-1cb52572] {\n    height: 500px;\n}\n", ""]);
+exports.push([module.i, "\n#map[data-v-1cb52572] {\r\n    height: 500px;\n}\r\n", ""]);
 
 // exports
 
@@ -9128,7 +9215,7 @@ exports = module.exports = __webpack_require__(/*! ../../../node_modules/css-loa
 
 
 // module
-exports.push([module.i, "\n.same-line[data-v-63d432ba] {\n  display: flex;\n  flex-direction: row;\n}\n", ""]);
+exports.push([module.i, "\n.same-line[data-v-63d432ba] {\r\n  display: flex;\r\n  flex-direction: row;\n}\r\n", ""]);
 
 // exports
 
@@ -9147,7 +9234,7 @@ exports = module.exports = __webpack_require__(/*! ../../../node_modules/css-loa
 
 
 // module
-exports.push([module.i, "\n#map[data-v-dd330670] {\n  height: 500px;\n}\n", ""]);
+exports.push([module.i, "\n#map[data-v-dd330670] {\r\n  height: 500px;\n}\r\n", ""]);
 
 // exports
 
@@ -9166,7 +9253,7 @@ exports = module.exports = __webpack_require__(/*! ../../../node_modules/css-loa
 
 
 // module
-exports.push([module.i, "\n.tr-map[data-v-3c7419e5] {\n  height: 40vh;\n}\n.map-td[data-v-3c7419e5] {\n  height: 50vh;\n}\ntr[data-v-3c7419e5]:hover {\n  cursor: default;\n}\n", ""]);
+exports.push([module.i, "\n.tr-map[data-v-3c7419e5] {\r\n  height: 40vh;\n}\n.map-td[data-v-3c7419e5] {\r\n  height: 50vh;\n}\ntr[data-v-3c7419e5]:hover {\r\n  cursor: default;\n}\r\n", ""]);
 
 // exports
 
@@ -20165,14 +20252,15 @@ return jQuery;
   var undefined;
 
   /** Used as the semantic version number. */
-  var VERSION = '4.17.20';
+  var VERSION = '4.17.21';
 
   /** Used as the size to enable large array optimizations. */
   var LARGE_ARRAY_SIZE = 200;
 
   /** Error message constants. */
   var CORE_ERROR_TEXT = 'Unsupported core-js use. Try https://npms.io/search?q=ponyfill.',
-      FUNC_ERROR_TEXT = 'Expected a function';
+      FUNC_ERROR_TEXT = 'Expected a function',
+      INVALID_TEMPL_VAR_ERROR_TEXT = 'Invalid `variable` option passed into `_.template`';
 
   /** Used to stand-in for `undefined` hash values. */
   var HASH_UNDEFINED = '__lodash_hash_undefined__';
@@ -20305,10 +20393,11 @@ return jQuery;
   var reRegExpChar = /[\\^$.*+?()[\]{}|]/g,
       reHasRegExpChar = RegExp(reRegExpChar.source);
 
-  /** Used to match leading and trailing whitespace. */
-  var reTrim = /^\s+|\s+$/g,
-      reTrimStart = /^\s+/,
-      reTrimEnd = /\s+$/;
+  /** Used to match leading whitespace. */
+  var reTrimStart = /^\s+/;
+
+  /** Used to match a single whitespace character. */
+  var reWhitespace = /\s/;
 
   /** Used to match wrap detail comments. */
   var reWrapComment = /\{(?:\n\/\* \[wrapped with .+\] \*\/)?\n?/,
@@ -20317,6 +20406,18 @@ return jQuery;
 
   /** Used to match words composed of alphanumeric characters. */
   var reAsciiWord = /[^\x00-\x2f\x3a-\x40\x5b-\x60\x7b-\x7f]+/g;
+
+  /**
+   * Used to validate the `validate` option in `_.template` variable.
+   *
+   * Forbids characters which could potentially change the meaning of the function argument definition:
+   * - "()," (modification of function parameters)
+   * - "=" (default value)
+   * - "[]{}" (destructuring of function parameters)
+   * - "/" (beginning of a comment)
+   * - whitespace
+   */
+  var reForbiddenIdentifierChars = /[()=,{}\[\]\/\s]/;
 
   /** Used to match backslashes in property paths. */
   var reEscapeChar = /\\(\\)?/g;
@@ -21147,6 +21248,19 @@ return jQuery;
   }
 
   /**
+   * The base implementation of `_.trim`.
+   *
+   * @private
+   * @param {string} string The string to trim.
+   * @returns {string} Returns the trimmed string.
+   */
+  function baseTrim(string) {
+    return string
+      ? string.slice(0, trimmedEndIndex(string) + 1).replace(reTrimStart, '')
+      : string;
+  }
+
+  /**
    * The base implementation of `_.unary` without support for storing metadata.
    *
    * @private
@@ -21477,6 +21591,21 @@ return jQuery;
     return hasUnicode(string)
       ? unicodeToArray(string)
       : asciiToArray(string);
+  }
+
+  /**
+   * Used by `_.trim` and `_.trimEnd` to get the index of the last non-whitespace
+   * character of `string`.
+   *
+   * @private
+   * @param {string} string The string to inspect.
+   * @returns {number} Returns the index of the last non-whitespace character.
+   */
+  function trimmedEndIndex(string) {
+    var index = string.length;
+
+    while (index-- && reWhitespace.test(string.charAt(index))) {}
+    return index;
   }
 
   /**
@@ -32647,7 +32776,7 @@ return jQuery;
       if (typeof value != 'string') {
         return value === 0 ? value : +value;
       }
-      value = value.replace(reTrim, '');
+      value = baseTrim(value);
       var isBinary = reIsBinary.test(value);
       return (isBinary || reIsOctal.test(value))
         ? freeParseInt(value.slice(2), isBinary ? 2 : 8)
@@ -35019,6 +35148,12 @@ return jQuery;
       if (!variable) {
         source = 'with (obj) {\n' + source + '\n}\n';
       }
+      // Throw an error if a forbidden character was found in `variable`, to prevent
+      // potential command injection attacks.
+      else if (reForbiddenIdentifierChars.test(variable)) {
+        throw new Error(INVALID_TEMPL_VAR_ERROR_TEXT);
+      }
+
       // Cleanup code by stripping empty strings.
       source = (isEvaluating ? source.replace(reEmptyStringLeading, '') : source)
         .replace(reEmptyStringMiddle, '$1')
@@ -35132,7 +35267,7 @@ return jQuery;
     function trim(string, chars, guard) {
       string = toString(string);
       if (string && (guard || chars === undefined)) {
-        return string.replace(reTrim, '');
+        return baseTrim(string);
       }
       if (!string || !(chars = baseToString(chars))) {
         return string;
@@ -35167,7 +35302,7 @@ return jQuery;
     function trimEnd(string, chars, guard) {
       string = toString(string);
       if (string && (guard || chars === undefined)) {
-        return string.replace(reTrimEnd, '');
+        return string.slice(0, trimmedEndIndex(string) + 1);
       }
       if (!string || !(chars = baseToString(chars))) {
         return string;
@@ -41874,8 +42009,108 @@ var render = function() {
     _c("h1", [_vm._v("New Bin")]),
     _vm._v(" "),
     _c("table", { staticClass: "data_table" }, [
+      _vm.instance === "admin"
+        ? _c("tr", [
+            _vm._m(0),
+            _vm._v(" "),
+            _c("td", [
+              _c(
+                "select",
+                {
+                  directives: [
+                    {
+                      name: "model",
+                      rawName: "v-model",
+                      value: _vm.publicSelection,
+                      expression: "publicSelection"
+                    }
+                  ],
+                  on: {
+                    change: function($event) {
+                      var $$selectedVal = Array.prototype.filter
+                        .call($event.target.options, function(o) {
+                          return o.selected
+                        })
+                        .map(function(o) {
+                          var val = "_value" in o ? o._value : o.value
+                          return val
+                        })
+                      _vm.publicSelection = $event.target.multiple
+                        ? $$selectedVal
+                        : $$selectedVal[0]
+                    }
+                  }
+                },
+                [
+                  _c("option", { attrs: { selected: "", value: "false" } }, [
+                    _vm._v("No")
+                  ]),
+                  _vm._v(" "),
+                  _c("option", { attrs: { value: "true" } }, [_vm._v("Yes")])
+                ]
+              )
+            ])
+          ])
+        : _vm._e(),
+      _vm._v(" "),
+      !_vm.isPublic && _vm.instance === "admin"
+        ? _c("tr", [
+            _vm._m(1),
+            _vm._v(" "),
+            _c("td", [
+              _c(
+                "select",
+                {
+                  directives: [
+                    {
+                      name: "model",
+                      rawName: "v-model",
+                      value: _vm.w_producer_id,
+                      expression: "w_producer_id"
+                    }
+                  ],
+                  on: {
+                    change: function($event) {
+                      var $$selectedVal = Array.prototype.filter
+                        .call($event.target.options, function(o) {
+                          return o.selected
+                        })
+                        .map(function(o) {
+                          var val = "_value" in o ? o._value : o.value
+                          return val
+                        })
+                      _vm.w_producer_id = $event.target.multiple
+                        ? $$selectedVal
+                        : $$selectedVal[0]
+                    }
+                  }
+                },
+                [
+                  _c(
+                    "option",
+                    {
+                      attrs: { disabled: "", selected: "" },
+                      domProps: { value: undefined }
+                    },
+                    [_vm._v("Please select producer")]
+                  ),
+                  _vm._v(" "),
+                  _vm._l(_vm.largeProducers, function(producer) {
+                    return _c(
+                      "option",
+                      { key: producer.id, domProps: { value: producer.id } },
+                      [_vm._v(_vm._s(producer.title))]
+                    )
+                  })
+                ],
+                2
+              )
+            ])
+          ])
+        : _vm._e(),
+      _vm._v(" "),
       _c("tr", [
-        _vm._m(0),
+        _vm._m(2),
         _vm._v(" "),
         _c("td", [
           _c(
@@ -41935,7 +42170,7 @@ var render = function() {
       ]),
       _vm._v(" "),
       _c("tr", [
-        _vm._m(1),
+        _vm._m(3),
         _vm._v(" "),
         _c("td", [
           _c("input", {
@@ -41962,7 +42197,7 @@ var render = function() {
       ]),
       _vm._v(" "),
       _c("tr", [
-        _vm._m(2),
+        _vm._m(4),
         _vm._v(" "),
         _c("td", { staticClass: "same-line" }, [
           _c("input", {
@@ -42052,10 +42287,10 @@ var render = function() {
       _vm._v(" "),
       _vm.location
         ? _c("tr", [
-            _vm._m(3),
+            _vm._m(5),
             _vm._v(" "),
             _c("td", [
-              _c("h2", [_vm._v("Click on the map to move the point.")]),
+              _c("h4", [_vm._v("Click on the map to move the point.")]),
               _vm._v(" "),
               _c("div", { staticClass: "map-td", attrs: { id: "map" } }, [
                 _vm._v(
@@ -42121,6 +42356,24 @@ var render = function() {
   ])
 }
 var staticRenderFns = [
+  function() {
+    var _vm = this
+    var _h = _vm.$createElement
+    var _c = _vm._self._c || _h
+    return _c("th", [
+      _vm._v("Public bin"),
+      _c("span", { staticClass: "red-text" }, [_vm._v("*")])
+    ])
+  },
+  function() {
+    var _vm = this
+    var _h = _vm.$createElement
+    var _c = _vm._self._c || _h
+    return _c("th", [
+      _vm._v("Select large producer"),
+      _c("span", { staticClass: "red-text" }, [_vm._v("*")])
+    ])
+  },
   function() {
     var _vm = this
     var _h = _vm.$createElement
@@ -42785,6 +43038,62 @@ var render = function() {
         ])
       ]),
       _vm._v(" "),
+      _vm.role === "w_producer" || _vm.role === "w_producer_employee"
+        ? _c("tr", [
+            _c("th", [_vm._v("Large producer")]),
+            _vm._v(" "),
+            _c("td", [
+              _c(
+                "select",
+                {
+                  directives: [
+                    {
+                      name: "model",
+                      rawName: "v-model",
+                      value: _vm.w_producer_id,
+                      expression: "w_producer_id"
+                    }
+                  ],
+                  on: {
+                    change: function($event) {
+                      var $$selectedVal = Array.prototype.filter
+                        .call($event.target.options, function(o) {
+                          return o.selected
+                        })
+                        .map(function(o) {
+                          var val = "_value" in o ? o._value : o.value
+                          return val
+                        })
+                      _vm.w_producer_id = $event.target.multiple
+                        ? $$selectedVal
+                        : $$selectedVal[0]
+                    }
+                  }
+                },
+                [
+                  _c(
+                    "option",
+                    {
+                      attrs: { disabled: "", selected: "" },
+                      domProps: { value: undefined }
+                    },
+                    [_vm._v("Please select producer")]
+                  ),
+                  _vm._v(" "),
+                  _vm._l(_vm.largeProducers, function(producer) {
+                    return _c(
+                      "option",
+                      { key: producer.id, domProps: { value: producer.id } },
+                      [_vm._v(_vm._s(producer.title))]
+                    )
+                  })
+                ],
+                2
+              )
+            ])
+          ])
+        : _vm._e(),
+      _vm._v(" "),
       _c("tr", [
         _c("th", [_vm._v("Password")]),
         _vm._v(" "),
@@ -43200,7 +43509,9 @@ var render = function() {
                 _vm._v("Cubic Inches")
               ]),
               _vm._v(" "),
-              _c("option", { attrs: { value: "pints" } }, [_vm._v("Pints")])
+              _c("option", { attrs: { value: "pints" } }, [_vm._v("Pints")]),
+              _vm._v(" "),
+              _c("option", { attrs: { value: "Tons" } }, [_vm._v("Tons")])
             ]
           )
         ])
@@ -58956,8 +59267,8 @@ __webpack_require__.r(__webpack_exports__);
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(/*! /var/www/html/resources/js/app.js */"./resources/js/app.js");
-module.exports = __webpack_require__(/*! /var/www/html/resources/sass/app.scss */"./resources/sass/app.scss");
+__webpack_require__(/*! C:\Users\Yannis Lavdos\Desktop\projects\Horeca-Api\resources\js\app.js */"./resources/js/app.js");
+module.exports = __webpack_require__(/*! C:\Users\Yannis Lavdos\Desktop\projects\Horeca-Api\resources\sass\app.scss */"./resources/sass/app.scss");
 
 
 /***/ })

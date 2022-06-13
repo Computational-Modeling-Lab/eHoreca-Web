@@ -4,7 +4,6 @@
         $(document).ready(() => {
             userAuth()
             const userObj = JSON.parse(localStorage.getItem('user'))
-            if (userObj.role !== 'admin') window.location.href = '/login'
         });
     </script>
 </head>
@@ -15,7 +14,7 @@
         @verbatim
         <template>
             <div id="app">
-                <create-bin v-if="entity === 'bins'" :instance="'admin'" :w_producer="{id: null}"></create-bin>
+                <create-bin v-if="entity === 'bins'" :instance="role" :producerid="pid"></create-bin>
                 <create-route v-if="entity === 'routes'"></create-route>
                 <create-heatmap v-if="entity === 'heatmaps'"></create-heatmap>
                 <create-vehicle v-if="entity === 'vehicles'"></create-vehicle>
@@ -32,6 +31,24 @@
             el: '#vue-container',
             data: {
                 entity: new URLSearchParams(window.location.search).get('entity'),
+                token: localStorage.getItem('token'),
+                userId: localStorage.getItem('userId'),
+                role: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).role : '',
+                pid: null
+            },
+            methods: {
+                async getProducerInfo() {
+                    try {
+                        const userData = await getProducerFromUserId();
+                        console.log('producer:', userData.data.id);
+                        if (userData) this.pid = userData.data.id;
+                    } catch (error) {
+                        console.log('userdata error:', error);
+                    }
+                }
+            },
+            created() {
+                if (this.role === 'w_producer' || this.role === 'w_producer_employee') this.getProducerInfo();
             }
         })
     </script>

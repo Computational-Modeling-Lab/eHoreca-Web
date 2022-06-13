@@ -161,7 +161,7 @@ return [
         Illuminate\Translation\TranslationServiceProvider::class,
         Illuminate\Validation\ValidationServiceProvider::class,
         Illuminate\View\ViewServiceProvider::class,
-
+        Laravel\Passport\PassportServiceProvider::class,
         /*
          * Package Service Providers...
          */
@@ -228,5 +228,18 @@ return [
         'View' => Illuminate\Support\Facades\View::class,
         'Helper' => App\Helpers\HelperFunctions::class,
     ],
+
+        /*
+    |--------------------------------------------------------------------------
+    | Api Url
+    |--------------------------------------------------------------------------
+    |
+    | This value is the name of your application. This value is used when the
+    | framework needs to place the application's name in a notification or
+    | any other location as required by the application or its packages.
+    |
+    */
+
+    'api_url' => env('API_URL', 'https://ehoreca.cmodlab-iu.edu.gr/api'),
 
 ];
